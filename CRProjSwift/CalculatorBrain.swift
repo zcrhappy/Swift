@@ -15,7 +15,17 @@ class CalculatorBrain
     
     private var accumulator: Double = 0.0
     private var internalProgram = [AnyObject]()
-    private var pending: PendingBinaryOperationInfo?
+    private var isPartialResult = false
+    private var pending: PendingBinaryOperationInfo? {
+        willSet {
+            if newValue != nil {
+                isPartialResult = true
+            } else {
+                isPartialResult = false
+            }
+            print(isPartialResult)
+        }
+    }
     
 //private method
     
@@ -115,18 +125,39 @@ class CalculatorBrain
     var description : String {
         get {
             var desc = ""
-            for op in internalProgram {
+            for (index, op) in internalProgram.enumerate() {
                 if let operand = op as? Double {
                     desc = desc.stringByAppendingString(String(operand))
-                }else if let operation = op as? String {
-                    if operation != "=" {
-                        desc = desc.stringByAppendingString(operation)
+                }else if let symbol = op as? String {
+                    if let operation = operations[symbol] {
+                        switch operation {
+                        case .Constant(_),.BinaryOpseration(_):
+                            desc += symbol
+                        case .UnaryOperation(_):
+                            desc += "\(symbol)(\(internalProgram[index-1]))"
+                        case .Equal:
+                            break;
+                        }
                     }
                 }
+            }
+
+            return desc
+        }
+    }
+    
+    var history : String {
+        get {
+            var desc = self.description
+            if isPartialResult {
+                desc += "..."
+            } else {
+                desc += "="
             }
             return desc
         }
     }
+    
     
     var result: Double {
         get {
